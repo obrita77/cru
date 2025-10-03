@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini CRUD de Tarefas</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cbc;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .input-section {
+            display: flex;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+        
+        #itemInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        #itemInput:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--secondary-color); }
+        
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { opacity: 0.9; }
+        
+        .btn-warning { background-color: var(--warning-color); color: var(--dark-color); }
+        .btn-warning:hover { opacity: 0.9; }
+        
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
+        
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        
+        .list-section { margin-top: 20px; }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .list-title { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
+        
+        .item-count {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .task-list { list-style-type: none; }
+        
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s;
+        }
+        
+        .task-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        .task-text { flex: 1; margin-right: 15px; word-break: break-word; }
+        
+        .task-actions { display: flex; gap: 8px; }
+        
+        .empty-list { text-align: center; padding: 30px; color: #888; font-style: italic; }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .edit-mode { background-color: #fff3cd; border-left-color: var(--warning-color); }
+        
+        footer { margin-top: 30px; text-align: center; color: #666; font-size: 0.9rem; }
+        
+        @media (max-width: 600px) {
+            .input-section { flex-direction: column; }
+            .task-item { flex-direction: column; align-items: flex-start; }
+            .task-text { margin-right: 0; margin-bottom: 10px; }
+            .task-actions { width: 100%; justify-content: flex-end; }
+        }
+
+        /* animação para excluir */
+        .fade-out { animation: fadeOut 0.5s forwards; }
+        @keyframes fadeOut {
+            from { opacity: 1; height: 60px; margin-bottom: 10px; }
+            to { opacity: 0; height: 0; margin-bottom: 0; }
+        }
+
+        /* botão desfazer */
+        .undo-btn {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .undo-btn:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Mini CRUD de Tarefas</h1>
+            <p class="description">Gerencie suas tarefas de forma simples e eficiente</p>
+        </header>
+        
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-danger" id="errorAlert"></div>
+        <div class="alert alert-warning" id="warningAlert"></div>
+        
+        <div class="input-section">
+            <input type="text" id="itemInput" placeholder="Digite uma nova tarefa...">
+            <button id="addBtn" class="btn-primary" type="button">Adicionar</button>
+            <button id="updateBtn" class="btn-success" style="display: none;" type="button">Atualizar</button>
+            <button id="cancelBtn" class="btn-secondary" style="display: none;" type="button">Cancelar</button>
+        </div>
+        
+        <div class="list-section">
+            <div class="list-header">
+                <span class="list-title">Minhas Tarefas</span>
+                <span class="item-count" id="itemCount">0 itens</span>
+            </div>
+            
+            <ul class="task-list" id="taskList"></ul>
+        </div>
+        
+        <footer>
+            <p>Os dados são salvos automaticamente no localStorage do seu navegador</p>
+        </footer>
+    </div>
+
+    <script>
+        let tasks = [];
+        let currentEditIndex = -1;
+        let lastDeleted = null; // guarda última tarefa apagada
+
+        const itemInput = document.getElementById('itemInput');
+        const addBtn = document.getElementById('addBtn');
+        const updateBtn = document.getElementById('updateBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const taskList = document.getElementById('taskList');
+        const itemCount = document.getElementById('itemCount');
+        const successAlert = document.getElementById('successAlert');
+        const errorAlert = document.getElementById('errorAlert');
+        const warningAlert = document.getElementById('warningAlert');
+
+        document.addEventListener('DOMContentLoaded', init);
+        addBtn.addEventListener('click', addItem);
+        updateBtn.addEventListener('click', updateItem);
+        cancelBtn.addEventListener('click', cancelEdit);
+        itemInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                currentEditIndex === -1 ? addItem() : updateItem();
+            }
+        });
+
+        taskList.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-btn');
+            if (editBtn) {
+                editItem(Number(editBtn.dataset.index));
+                return;
+            }
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                deleteItem(Number(deleteBtn.dataset.index));
+                return;
+            }
+        });
+
+        function init() {
+            loadFromLocalStorage();
+            renderTasks();
+        }
+
+        function addItem() {
+            const text = itemInput.value.trim();
+            if (!text) return showAlert('Por favor, digite uma tarefa!', 'error');
+            if (isDuplicate(text)) return showAlert('Esta tarefa já existe na lista!', 'warning');
+            tasks.push(text);
+            saveToLocalStorage();
+            renderTasks();
+            itemInput.value = '';
+            showAlert('Tarefa adicionada com sucesso! ✅', 'success');
+        }
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<li class="empty-list">Nenhuma tarefa cadastrada. Adicione uma nova tarefa acima!</li>';
+                itemCount.textContent = '0 itens';
+                return;
+            }
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.innerHTML = `
+                    <span class="task-text">${escapeHtml(task)}</span>
+                    <div class="task-actions">
+                        <button type="button" class="btn-warning edit-btn" data-index="${index}">Editar</button>
+                        <button type="button" class="btn-danger delete-btn" data-index="${index}">Excluir</button>
+                    </div>
+                `;
+                taskList.appendChild(li);
+            });
+            itemCount.textContent = `${tasks.length} ${tasks.length === 1 ? 'item' : 'itens'}`;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                      .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+                      .replace(/'/g,"&#039;");
+        }
+
+        function deleteItem(index) {
+            if (index < 0 || index >= tasks.length) return;
+            const li = taskList.querySelectorAll('.task-item')[index];
+            lastDeleted = { text: tasks[index], index: index };
+            li.classList.add('fade-out');
+            setTimeout(() => {
+                tasks.splice(index, 1);
+                saveToLocalStorage();
+                renderTasks();
+                showUndoAlert('Tarefa excluída!');
+            }, 500);
+        }
+
+        function showUndoAlert(message) {
+            successAlert.innerHTML = message + 
+                ` <button class="undo-btn" onclick="undoDelete()">Desfazer</button>`;
+            successAlert.style.display = 'block';
+            setTimeout(() => {
+                successAlert.style.display = 'none';
+                successAlert.innerHTML = '';
+                lastDeleted = null;
+            }, 5000);
+        }
+
+        function undoDelete() {
+            if (lastDeleted) {
+                tasks.splice(lastDeleted.index, 0, lastDeleted.text);
+                saveToLocalStorage();
+                renderTasks();
+                showAlert('Tarefa restaurada! ✅', 'success');
+                lastDeleted = null;
+            }
+        }
+
+        function editItem(index) {
+            currentEditIndex = index;
+            itemInput.value = tasks[index];
+            itemInput.focus();
+            addBtn.style.display = 'none';
+            updateBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'inline-block';
+            document.querySelectorAll('.task-item').forEach(item => item.classList.remove('edit-mode'));
+            document.querySelectorAll('.task-item')[index].classList.add('edit-mode');
+            showAlert('Editando tarefa...', 'warning');
+        }
+
+        function updateItem() {
+            const text = itemInput.value.trim();
+            if (!text) return showAlert('Por favor, digite uma tarefa!', 'error');
+            if (isDuplicate(text, currentEditIndex)) return showAlert('Esta tarefa já existe na lista!', 'warning');
+            tasks[currentEditIndex] = text;
+            saveToLocalStorage();
+            renderTasks();
+            cancelEdit();
+            showAlert('Tarefa atualizada com sucesso! ✅', 'success');
+        }
+
+        function cancelEdit() {
+            currentEditIndex = -1;
+            itemInput.value = '';
+            addBtn.style.display = 'inline-block';
+            updateBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            document.querySelectorAll('.task-item').forEach(item => item.classList.remove('edit-mode'));
+        }
+
+        function isDuplicate(text, excludeIndex = -1) {
+            return tasks.some((task, index) => index !== excludeIndex && task.toLowerCase() === text.toLowerCase());
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function loadFromLocalStorage() {
+            const stored = localStorage.getItem('tasks');
+            if (stored) tasks = JSON.parse(stored);
+        }
+
+        function showAlert(message, type) {
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            warningAlert.style.display = 'none';
+            let alertElement;
+            switch(type) {
+                case 'success': alertElement = successAlert; break;
+                case 'error': alertElement = errorAlert; break;
+                case 'warning': alertElement = warningAlert; break;
+            }
+            if (!alertElement) return;
+            alertElement.textContent = message;
+            alertElement.style.display = 'block';
+            setTimeout(() => { alertElement.style.display = 'none'; }, 3000);
+        }
+    </script>
+</body>
+</html>
